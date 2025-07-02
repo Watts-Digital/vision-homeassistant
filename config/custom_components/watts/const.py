@@ -16,6 +16,10 @@ OAUTH2_SCOPES = [
 # Update interval in seconds
 UPDATE_INTERVAL = 15
 
+# Default allowed setpoints range
+DEFAULT_MIN_SETPOINT = 5
+DEFAULT_MAX_SETPOINT = 35
+
 # API endpoints
 API_BASE_URL = "https://dev-vision.watts.io/api"
 

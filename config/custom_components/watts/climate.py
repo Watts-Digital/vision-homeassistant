@@ -17,7 +17,12 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .api import WattsVisionAPI
-from .const import DOMAIN, INTERFACE_THERMOSTAT
+from .const import (
+    DEFAULT_MAX_SETPOINT,
+    DEFAULT_MIN_SETPOINT,
+    DOMAIN,
+    INTERFACE_THERMOSTAT,
+)
 from .coordinator import WattsVisionCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -82,8 +87,12 @@ class WattsVisionClimate(CoordinatorEntity, ClimateEntity):
         }
 
         # Set temperature limits from device data
-        self._attr_min_temp = device_data.get("minAllowedTemperature", 5)
-        self._attr_max_temp = device_data.get("maxAllowedTemperature", 30)
+        self._attr_min_temp = device_data.get(
+            "minAllowedTemperature", DEFAULT_MIN_SETPOINT
+        )
+        self._attr_max_temp = device_data.get(
+            "maxAllowedTemperature", DEFAULT_MAX_SETPOINT
+        )
 
         # Store API reference for write operations
         self._api = coordinator.api
