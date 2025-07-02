@@ -1,7 +1,9 @@
 /config
-!/config/custom_components
-!/config/custom_components/**
 config2/*
+
+!/config/custom_components/
+!/config/custom_components/watts/
+!/config/custom_components/watts/**
 
 tests/testing_config/deps
 tests/testing_config/home-assistant.log*
