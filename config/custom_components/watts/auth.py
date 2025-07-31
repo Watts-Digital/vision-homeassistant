@@ -5,7 +5,7 @@ from homeassistant.helpers import config_entry_oauth2_flow
 
 
 class ConfigEntryAuth:
-    """Provide Watts Vision+ authentication tied to an OAuth2 based config entry."""
+    """Provide Watts Vision+ authentication with OAuth2 config entry."""
 
     def __init__(
         self,
@@ -18,7 +18,7 @@ class ConfigEntryAuth:
         self.token = self.session.token
 
     def refresh_tokens(self) -> str:
-        """Refresh and return new Watts Vision+ tokens using Home Assistant OAuth2 session."""
+        """Refresh and return new Watts Vision+ tokens."""
         run_coroutine_threadsafe(
             self.session.async_ensure_token_valid(), self.hass.loop
         ).result()

@@ -4,21 +4,22 @@ from __future__ import annotations
 
 from datetime import timedelta
 import logging
-from typing import Any
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+import pywattsvision
 
-from .api import WattsVisionAPI
 from .const import DOMAIN, UPDATE_INTERVAL
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class WattsVisionCoordinator(DataUpdateCoordinator):
-    """Class to manage fetching Watts Vision+ data."""
+    """Class to fetch Watts Vision+ data."""
 
-    def __init__(self, hass: HomeAssistant, api: WattsVisionAPI) -> None:
+    def __init__(
+        self, hass: HomeAssistant, client: pywattsvision.WattsVisionClient
+    ) -> None:
         """Initialize the coordinator."""
         super().__init__(
             hass,
@@ -26,12 +27,11 @@ class WattsVisionCoordinator(DataUpdateCoordinator):
             name=DOMAIN,
             update_interval=timedelta(seconds=UPDATE_INTERVAL),
         )
-        self.api = api
+        self.client = client
 
-    async def _async_update_data(self) -> dict[str, dict[str, Any]]:
+    async def _async_update_data(self) -> dict[str, pywattsvision.Device]:
         """Fetch data from Watts Vision API."""
         try:
-            data = await self.api.async_get_all_devices_data()
-            return data
+            return await self.client.get_all_devices_data()
         except Exception as err:
-            raise UpdateFailed(f"Error communicating with API: {err}") from err
+            raise UpdateFailed(f"API error: {err}") from err

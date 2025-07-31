@@ -10,9 +10,9 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from pywattsvision.pywattsvision import SwitchDevice
 
-from .api import WattsVisionAPI
-from .const import DOMAIN, INTERFACE_SWITCH
+from .const import DOMAIN
 from .coordinator import WattsVisionCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -24,27 +24,14 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Watts Vision switch entities from a config entry."""
-    auth = entry.runtime_data
-    api = WattsVisionAPI(auth)
+    coordinator = entry.runtime_data["coordinator"]
 
-    # Create coordinator
-    coordinator_key = f"{DOMAIN}_coordinator"
-
-    if coordinator_key not in hass.data:
-        coordinator = WattsVisionCoordinator(hass, api)
-        await coordinator.async_config_entry_first_refresh()
-        hass.data[coordinator_key] = coordinator
-        _LOGGER.debug("Created new coordinator")
-    else:
-        coordinator = hass.data[coordinator_key]
-        _LOGGER.debug("Using existing coordinator")
-
-    # Create switch entities for ON/OFF devices
+    # Create switch entities
     entities = []
-    for device_id, device_data in coordinator.data.items():
-        if device_data.get("interface") == INTERFACE_SWITCH:
-            entities.append(WattsVisionSwitch(coordinator, device_id, device_data))
-            _LOGGER.debug("Created switch entity for device %s", device_id)
+    for device in coordinator.data.values():
+        if isinstance(device, SwitchDevice):
+            entities.append(WattsVisionSwitch(coordinator, device))
+            _LOGGER.debug("Created switch entity for device %s", device.device_id)
 
     if entities:
         async_add_entities(entities, update_before_add=True)
@@ -52,77 +39,62 @@ async def async_setup_entry(
 
 
 class WattsVisionSwitch(CoordinatorEntity, SwitchEntity):
-    """Watts Vision ON/OFF device as a switch entity."""
+    """Watts Vision switch device as a switch entity."""
 
     def __init__(
         self,
         coordinator: WattsVisionCoordinator,
-        device_id: str,
-        device_data: dict[str, Any],
+        device: SwitchDevice,
     ) -> None:
         """Initialize the switch entity."""
         super().__init__(coordinator)
-        self._device_id = device_id
-        self._attr_unique_id = device_id
-        self._attr_name = device_data["friendlyName"]
+        self._device = device
+        self._attr_unique_id = device.device_id
+        self._attr_name = device.device_name
         self._attr_device_info = {
-            "identifiers": {(DOMAIN, device_id)},
-            "name": device_data["friendlyName"],
+            "identifiers": {(DOMAIN, device.device_id)},
+            "name": device.device_name,
             "manufacturer": "Watts",
             "model": "Vision+ Switch",
         }
-        # Store API reference for write operations
-        self._api = coordinator.api
 
     @property
     def is_on(self) -> bool | None:
         """Return True if the switch is on."""
-        device_data = self.coordinator.data.get(self._device_id)
-        if device_data:
-            _LOGGER.debug("SWITCH STATE: %s", device_data.get("isTurnedOn", False))
-            return device_data.get("isTurnedOn", False)
+        device = self.coordinator.data.get(self._device.device_id)
+        if isinstance(device, SwitchDevice):
+            return device.is_turned_on
         return None
 
     @property
     def available(self) -> bool:
-        """Return True if entity is available."""
-        device_data = self.coordinator.data.get(self._device_id)
-        if device_data:
-            return device_data.get("isOnline", False)
+        """Return True if entity is online."""
+        device = self.coordinator.data.get(self._device.device_id)
+        if device:
+            return device.is_online
         return False
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return additional state attributes."""
-        device_data = self.coordinator.data.get(self._device_id)
-        if not device_data:
+        device = self.coordinator.data.get(self._device.device_id)
+        if not isinstance(device, SwitchDevice):
             return {}
-
-        return {
-            "device_type": device_data.get("deviceType"),
-            "room_name": device_data.get("roomName"),
-            "description": device_data.get("description"),
-            "supports_proactive_reporting": device_data.get(
-                "supportsProactiveReporting"
-            ),
-        }
+        return {"device_type": device.device_type, "room_name": device.room_name}
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the switch on."""
         try:
-            await self._api.async_set_switch_state(self._device_id, True)
-            _LOGGER.debug("Successfully turned on switch %s", self.name)
-            # Force refresh
-            await self.coordinator.async_request_refresh()
-        except Exception as err:
+            await self.coordinator.client.set_switch_state(self._device.device_id, True)
+        except RuntimeError as err:
             _LOGGER.error("Error turning on switch %s: %s", self.name, err)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the switch off."""
         try:
-            await self._api.async_set_switch_state(self._device_id, False)
+            await self.coordinator.client.set_switch_state(
+                self._device.device_id, False
+            )
             _LOGGER.debug("Successfully turned off switch %s", self.name)
-            # Force refresh
-            await self.coordinator.async_request_refresh()
-        except Exception as err:
+        except RuntimeError as err:
             _LOGGER.error("Error turning off switch %s: %s", self.name, err)
