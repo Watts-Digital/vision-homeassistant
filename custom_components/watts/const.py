@@ -11,4 +11,4 @@ OAUTH2_SCOPES = [
     "https://visionlogindev.onmicrosoft.com/vision/vision.read",
 ]
 
-UPDATE_INTERVAL = 5
+UPDATE_INTERVAL = 30

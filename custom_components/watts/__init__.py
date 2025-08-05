@@ -1,4 +1,4 @@
-"""The Watts Vision integration."""
+"""The Watts Vision + integration."""
 
 from __future__ import annotations
 
