@@ -9,11 +9,10 @@ from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from pywattsvision.pywattsvision import SwitchDevice
 
-from .const import DOMAIN
 from .coordinator import WattsVisionCoordinator
+from .entity import WattsVisionEntity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,7 +23,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Watts Vision switch entities from a config entry."""
-    coordinator = entry.runtime_data["coordinator"]
+    coordinator: WattsVisionCoordinator = entry.runtime_data["coordinator"]
 
     # Create switch entities
     entities = []
@@ -38,8 +37,10 @@ async def async_setup_entry(
         _LOGGER.info("Added %d switch entities", len(entities))
 
 
-class WattsVisionSwitch(CoordinatorEntity, SwitchEntity):
+class WattsVisionSwitch(WattsVisionEntity, SwitchEntity):
     """Watts Vision switch device as a switch entity."""
+
+    _entity_name = "Switch"
 
     def __init__(
         self,
@@ -47,16 +48,8 @@ class WattsVisionSwitch(CoordinatorEntity, SwitchEntity):
         device: SwitchDevice,
     ) -> None:
         """Initialize the switch entity."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, device.device_id)
         self._device = device
-        self._attr_unique_id = device.device_id
-        self._attr_name = device.device_name
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, device.device_id)},
-            "name": device.device_name,
-            "manufacturer": "Watts",
-            "model": "Vision+ Switch",
-        }
 
     @property
     def is_on(self) -> bool | None:
@@ -65,14 +58,6 @@ class WattsVisionSwitch(CoordinatorEntity, SwitchEntity):
         if isinstance(device, SwitchDevice):
             return device.is_turned_on
         return None
-
-    @property
-    def available(self) -> bool:
-        """Return True if entity is online."""
-        device = self.coordinator.data.get(self._device.device_id)
-        if device:
-            return device.is_online
-        return False
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -86,8 +71,9 @@ class WattsVisionSwitch(CoordinatorEntity, SwitchEntity):
         """Turn the switch on."""
         try:
             await self.coordinator.client.set_switch_state(self._device.device_id, True)
+            _LOGGER.debug("Successfully turned on switch %s", self._attr_name)
         except RuntimeError as err:
-            _LOGGER.error("Error turning on switch %s: %s", self.name, err)
+            _LOGGER.error("Error turning on switch %s: %s", self._attr_name, err)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the switch off."""
@@ -95,6 +81,6 @@ class WattsVisionSwitch(CoordinatorEntity, SwitchEntity):
             await self.coordinator.client.set_switch_state(
                 self._device.device_id, False
             )
-            _LOGGER.debug("Successfully turned off switch %s", self.name)
+            _LOGGER.debug("Successfully turned off switch %s", self._attr_name)
         except RuntimeError as err:
-            _LOGGER.error("Error turning off switch %s: %s", self.name, err)
+            _LOGGER.error("Error turning off switch %s: %s", self._attr_name, err)

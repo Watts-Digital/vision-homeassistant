@@ -1,5 +1,3 @@
-"""Tests for the Watts Vision switch platform."""
-
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from custom_components.watts.coordinator import WattsVisionCoordinator
@@ -32,6 +30,7 @@ def mock_coordinator(mock_device):
     coordinator.data = {mock_device.device_id: mock_device}
     coordinator.client = MagicMock()
     coordinator.client.set_switch_state = AsyncMock()
+    coordinator.last_update_success = True  # Add mock for last_update_success
     return coordinator
 
 
@@ -79,6 +78,7 @@ async def test_async_setup_entry_with_switch_devices() -> None:
     async_add_entities = MagicMock(spec=AddEntitiesCallback)
 
     coordinator = MagicMock()
+    coordinator.last_update_success = True  # Add mock for last_update_success
     switch_device = MagicMock(spec=SwitchDevice)
     switch_device.device_id = "switch_1"
     switch_device.device_name = "Test Switch 1"
@@ -107,6 +107,7 @@ async def test_async_setup_entry_no_switch_devices() -> None:
     async_add_entities = MagicMock(spec=AddEntitiesCallback)
 
     coordinator = MagicMock()
+    coordinator.last_update_success = True  # Add mock for last_update_success
     thermostat_device = MagicMock(spec=ThermostatDevice)
     thermostat_device.device_id = "thermostat_1"
     thermostat_device.device_name = "Test Thermostat"
@@ -131,15 +132,20 @@ async def test_async_setup_entry_no_switch_devices() -> None:
 
 def test_switch_initialization(mock_coordinator, mock_device) -> None:
     """Test switch entity initialization."""
+    # Ensure coordinator.data is properly set before creating the entity
+    mock_coordinator.data = {mock_device.device_id: mock_device}
     switch = WattsVisionSwitch(mock_coordinator, mock_device)
 
     assert switch._device == mock_device
     assert switch._attr_unique_id == "switch_123"
-    assert switch._attr_name == "Test Switch"
-    assert switch._attr_device_info["identifiers"] == {("watts", "switch_123")}
-    assert switch._attr_device_info["name"] == "Test Switch"
-    assert switch._attr_device_info["manufacturer"] == "Watts"
-    assert switch._attr_device_info["model"] == "Vision+ Switch"
+    assert switch._attr_name == "Switch"  # Matches _entity_name
+    # Check device_info property directly to ensure it's not None
+    device_info = switch.device_info
+    assert device_info is not None
+    assert device_info["identifiers"] == {("watts", "switch_123")}
+    assert device_info["name"] == "Test Switch"
+    assert device_info["manufacturer"] == "Watts"
+    assert device_info["model"] == "Vision+ switch"
 
 
 @pytest.mark.asyncio
@@ -174,18 +180,21 @@ def test_is_on_device_not_found(switch_entity, mock_coordinator) -> None:
     assert switch_entity.is_on is None
 
 
-def test_available_true(switch_entity) -> None:
+def test_available_true(switch_entity, mock_coordinator) -> None:
     """Test available property when device is online."""
+    mock_coordinator.last_update_success = True
     assert switch_entity.available is True
 
 
 def test_available_false(switch_entity, mock_coordinator, mock_device) -> None:
     """Test available property when device is offline."""
+    mock_coordinator.last_update_success = True
     mock_device.is_online = False
     assert switch_entity.available is False
 
 
 def test_available_device_not_found(switch_entity, mock_coordinator) -> None:
     """Test available property when device is not found."""
+    mock_coordinator.last_update_success = True
     mock_coordinator.data = {}
     assert switch_entity.available is False

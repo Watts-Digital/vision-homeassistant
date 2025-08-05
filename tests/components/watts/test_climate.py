@@ -46,6 +46,7 @@ def mock_coordinator(mock_device):
     coordinator.client = AsyncMock()
     coordinator.client.set_thermostat_temperature = AsyncMock()
     coordinator.client.set_thermostat_mode = AsyncMock()
+    coordinator.last_update_success = True
     return coordinator
 
 
@@ -135,6 +136,7 @@ async def test_async_setup_entry_with_thermostat_devices() -> None:
     async_add_entities = MagicMock(spec=AddEntitiesCallback)
 
     coordinator = MagicMock()
+    coordinator.last_update_success = True
     thermostat_device = MagicMock(spec=ThermostatDevice)
     thermostat_device.device_id = "thermostat_1"
     thermostat_device.device_name = "Test Thermostat 1"
@@ -169,6 +171,7 @@ async def test_async_setup_entry_no_thermostat_devices() -> None:
     async_add_entities = MagicMock(spec=AddEntitiesCallback)
 
     coordinator = MagicMock()
+    coordinator.last_update_success = True
     switch_device = MagicMock(spec=SwitchDevice)
     switch_device.device_id = "switch_1"
     switch_device.device_name = "Test Switch"
@@ -187,15 +190,20 @@ async def test_async_setup_entry_no_thermostat_devices() -> None:
 
 def test_climate_initialization(mock_coordinator, mock_device) -> None:
     """Test climate entity initialization."""
+    # Ensure coordinator.data is properly set before creating the entity
+    mock_coordinator.data = {mock_device.device_id: mock_device}
     climate = WattsVisionClimate(mock_coordinator, mock_device)
 
     assert climate._device == mock_device
     assert climate._attr_unique_id == "device_123"
-    assert climate._attr_name == "Test Thermostat"
-    assert climate._attr_device_info["identifiers"] == {("watts", "device_123")}
-    assert climate._attr_device_info["name"] == "Test Thermostat"
-    assert climate._attr_device_info["manufacturer"] == "Watts"
-    assert climate._attr_device_info["model"] == "Vision+ Thermostat"
+    assert climate._attr_name == "Thermostat"
+    # Check device_info property directly to ensure it's not None
+    device_info = climate.device_info
+    assert device_info is not None
+    assert device_info["identifiers"] == {("watts", "device_123")}
+    assert device_info["name"] == "Test Thermostat"
+    assert device_info["manufacturer"] == "Watts"
+    assert device_info["model"] == "Vision+ thermostat"
     assert climate._attr_min_temp == 5.0
     assert climate._attr_max_temp == 30.0
     assert climate._attr_temperature_unit == "°C"
@@ -231,6 +239,7 @@ async def test_set_hvac_mode_error(
 async def test_set_temperature_no_temperature() -> None:
     """Test temperature setting without temperature parameter."""
     mock_coordinator = MagicMock()
+    mock_coordinator.last_update_success = True
     mock_device = MagicMock()
     climate = WattsVisionClimate(mock_coordinator, mock_device)
 
@@ -289,19 +298,22 @@ def test_hvac_mode_unknown(climate_entity, mock_coordinator, mock_device) -> Non
     assert climate_entity.hvac_mode is None
 
 
-def test_available_true(climate_entity) -> None:
+def test_available_true(climate_entity, mock_coordinator) -> None:
     """Test available property when device is online."""
+    mock_coordinator.last_update_success = True
     assert climate_entity.available is True
 
 
 def test_available_false(climate_entity, mock_coordinator, mock_device) -> None:
     """Test available property when device is offline."""
+    mock_coordinator.last_update_success = True
     mock_device.is_online = False
     assert climate_entity.available is False
 
 
 def test_available_device_not_found(climate_entity, mock_coordinator) -> None:
     """Test available property when device is not found."""
+    mock_coordinator.last_update_success = True
     mock_coordinator.data = {}
     assert climate_entity.available is False
 

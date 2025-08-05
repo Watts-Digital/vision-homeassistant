@@ -66,7 +66,7 @@ def test_coordinator_initialization(coordinator, mock_hass, mock_client) -> None
     assert coordinator.hass == mock_hass
     assert coordinator.client == mock_client
     assert coordinator.name == "watts"
-    assert coordinator.update_interval == timedelta(seconds=5)
+    assert coordinator.update_interval == timedelta(seconds=30)
 
 
 def test_coordinator_inherits_from_data_update_coordinator(coordinator) -> None:
