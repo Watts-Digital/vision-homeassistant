@@ -23,8 +23,16 @@ class OAuth2FlowHandler(
     @property
     def extra_authorize_data(self) -> dict[str, Any]:
         """Extra parameters for OAuth2 authentication."""
+
         return {
             "scope": " ".join(OAUTH2_SCOPES),
             "access_type": "offline",
             "prompt": "consent",
         }
+
+    async def async_step_user(self, user_input=None):
+        """Handle a flow initiated by the user."""
+
+        if self._async_current_entries():
+            return self.async_abort(reason="already_configured")
+        return await super().async_step_user(user_input)

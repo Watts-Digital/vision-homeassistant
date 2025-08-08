@@ -13,18 +13,22 @@ class WattsVisionEntity(CoordinatorEntity[WattsVisionCoordinator]):
     """Base entity for Watts Vision integration."""
 
     _attr_has_entity_name = True
-    _entity_name = "Device"  # Default entity name
 
     def __init__(self, coordinator: WattsVisionCoordinator, device_id: str) -> None:
         """Initialize the entity."""
+
         super().__init__(coordinator)
         self.device_id = device_id
         self._attr_unique_id = device_id
-        self._attr_name = self._entity_name
+
+        device = coordinator.data.get(device_id)
+        if device:
+            self._attr_name = getattr(device, "device_name", None)
 
     @property
     def device_info(self) -> DeviceInfo:
         """Return device information."""
+
         device = self.coordinator.data.get(self.device_id)
         if device:
             return DeviceInfo(
@@ -38,6 +42,7 @@ class WattsVisionEntity(CoordinatorEntity[WattsVisionCoordinator]):
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
+
         if not self.coordinator.last_update_success:
             return False
 

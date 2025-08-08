@@ -1,4 +1,0 @@
-# requirements_test.txt
-pytest==8.4.1
-pytest-asyncio
-pytest-sugar
