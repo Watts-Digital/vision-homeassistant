@@ -26,7 +26,7 @@ class WattsVisionEntity(CoordinatorEntity[WattsVisionCoordinator]):
             self._attr_name = getattr(device, "device_name", None)
 
     @property
-    def device_info(self) -> DeviceInfo:
+    def device_info(self) -> DeviceInfo | None:
         """Return device information."""
 
         device = self.coordinator.data.get(self.device_id)

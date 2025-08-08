@@ -6,6 +6,8 @@ import asyncio
 import logging
 from typing import Any
 
+from visionpluspython.visionpluspython import ThermostatDevice, ThermostatMode
+
 from homeassistant.components.climate import (
     ClimateEntity,
     ClimateEntityFeature,
@@ -13,8 +15,7 @@ from homeassistant.components.climate import (
 )
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from visionpluspython.visionpluspython import ThermostatDevice, ThermostatMode
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import WattsVisionConfigEntry
 from .coordinator import WattsVisionCoordinator
@@ -26,7 +27,7 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: WattsVisionConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up Watts Vision climate entities from a config entry."""
 

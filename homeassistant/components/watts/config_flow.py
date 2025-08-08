@@ -3,9 +3,10 @@
 import logging
 from typing import Any
 
+from visionpluspython.visionpluspython.auth import WattsVisionAuth
+
 from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.helpers import config_entry_oauth2_flow
-from visionpluspython.visionpluspython.auth import WattsVisionAuth
 
 from .const import DOMAIN, OAUTH2_SCOPES
 
@@ -31,7 +32,7 @@ class OAuth2FlowHandler(
             "prompt": "consent",
         }
 
-    async def async_step_user(self, user_input=None):
+    async def async_step_user(self, user_input=None) -> ConfigFlowResult:
         """Handle a flow initiated by the user."""
         return await super().async_step_user(user_input)
 

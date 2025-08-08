@@ -6,10 +6,11 @@ import asyncio
 import logging
 from typing import Any
 
+from visionpluspython.visionpluspython import SwitchDevice
+
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from visionpluspython.visionpluspython import SwitchDevice
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import WattsVisionConfigEntry
 from .coordinator import WattsVisionCoordinator
@@ -21,7 +22,7 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: WattsVisionConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up Watts Vision switch entities from a config entry."""
 

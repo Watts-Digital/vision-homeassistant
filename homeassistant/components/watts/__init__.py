@@ -7,6 +7,7 @@ import logging
 from typing import TypedDict
 
 from aiohttp import ClientError, ClientResponseError
+from visionpluspython.visionpluspython import WattsVisionAuth, WattsVisionClient
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -14,7 +15,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import aiohttp_client, config_entry_oauth2_flow
 from homeassistant.helpers.update_coordinator import UpdateFailed
-from visionpluspython.visionpluspython import WattsVisionAuth, WattsVisionClient
 
 from .coordinator import WattsVisionCoordinator
 
