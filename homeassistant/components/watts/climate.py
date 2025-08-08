@@ -89,9 +89,6 @@ class WattsVisionClimate(WattsVisionEntity, ClimateEntity):
     @property
     def hvac_mode(self) -> HVACMode | None:
         """Return hvac mode."""
-        if self._device_id is None:
-            return None
-
         device = self.coordinator.data.get(self._device_id)
         if isinstance(device, ThermostatDevice):
             mode_mapping = {
@@ -106,9 +103,6 @@ class WattsVisionClimate(WattsVisionEntity, ClimateEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return additional state attributes."""
-        if self._device_id is None:
-            return {}
-
         device = self.coordinator.data.get(self._device_id)
         if not isinstance(device, ThermostatDevice):
             return {}
@@ -124,7 +118,7 @@ class WattsVisionClimate(WattsVisionEntity, ClimateEntity):
     async def async_set_temperature(self, **kwargs: Any) -> None:
         """Set new target temperature."""
         temperature = kwargs.get(ATTR_TEMPERATURE)
-        if temperature is None or self._device_id is None:
+        if temperature is None:
             return
 
         try:
@@ -145,9 +139,6 @@ class WattsVisionClimate(WattsVisionEntity, ClimateEntity):
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set new target hvac mode."""
-        if self._device_id is None:
-            return
-
         hvac_to_mode = {
             HVACMode.HEAT: "Comfort",
             HVACMode.OFF: "Off",

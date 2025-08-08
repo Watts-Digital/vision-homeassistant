@@ -3,6 +3,7 @@
 import logging
 from typing import Any
 
+from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.helpers import config_entry_oauth2_flow
 from visionpluspython.visionpluspython.auth import WattsVisionAuth
 
@@ -34,7 +35,7 @@ class OAuth2FlowHandler(
         """Handle a flow initiated by the user."""
         return await super().async_step_user(user_input)
 
-    async def async_oauth_create_entry(self, data: dict[str, Any]) -> dict[str, Any]:
+    async def async_oauth_create_entry(self, data: dict[str, Any]) -> ConfigFlowResult:
         """Create an entry for the OAuth2 flow."""
 
         access_token = data["token"]["access_token"]

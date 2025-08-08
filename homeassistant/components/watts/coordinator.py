@@ -59,7 +59,6 @@ class WattsVisionCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self) -> dict[str, Device]:
         """Fetch data from Watts Vision API."""
         try:
-            # If not initialized, perform discovery first
             if not self._is_initialized:
                 await self.async_config_entry_first_refresh()
                 return self._devices
@@ -88,3 +87,8 @@ class WattsVisionCoordinator(DataUpdateCoordinator):
     def device_ids(self) -> list[str]:
         """Get list of all device IDs."""
         return list(self._devices.keys())
+
+    async def close(self) -> None:
+        """Close the coordinator and cleanup resources."""
+        self._devices.clear()
+        _LOGGER.debug("Coordinator resources cleaned up")

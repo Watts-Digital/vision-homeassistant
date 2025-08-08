@@ -14,8 +14,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import aiohttp_client, config_entry_oauth2_flow
 from homeassistant.helpers.update_coordinator import UpdateFailed
-from visionpluspython.visionpluspython import WattsVisionClient
-from visionpluspython.visionpluspython.auth import WattsVisionAuth
+from visionpluspython.visionpluspython import WattsVisionAuth, WattsVisionClient
 
 from .coordinator import WattsVisionCoordinator
 
@@ -58,9 +57,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: WattsVisionConfigEntry) 
         raise ConfigEntryNotReady("Network issue during OAuth setup") from err
 
     auth = WattsVisionAuth(
-        client_id=implementation.client_id,
-        client_secret=implementation.client_secret,
-        refresh_token=oauth_session.token.get("refresh_token"),
+        oauth_session=oauth_session,
         session=aiohttp_client.async_get_clientsession(hass),
     )
 
@@ -110,10 +107,7 @@ async def async_unload_entry(
     coordinator = runtime_data["coordinator"]
     if coordinator:
         try:
-            if hasattr(coordinator, "async_shutdown"):
-                await coordinator.async_shutdown()
-            else:
-                await coordinator.close()
+            await coordinator.close()
             _LOGGER.debug("Coordinator closed successfully")
         except (OSError, AttributeError) as err:
             _LOGGER.warning("Error closing coordinator: %s", err)
