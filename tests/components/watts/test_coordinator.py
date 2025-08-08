@@ -9,7 +9,8 @@ from homeassistant.components.watts.coordinator import WattsVisionCoordinator
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import UpdateFailed
 
-from .const import DOMAIN, UPDATE_INTERVAL
+DOMAIN = "watts"
+UPDATE_INTERVAL = 30
 
 
 @pytest.fixture
@@ -30,7 +31,7 @@ def mock_client():
 
 @pytest.fixture
 def mock_device():
-    """Mock Device instance."""
+    """Mock Watts Vision device."""
     device = MagicMock(spec=Device)
     device.device_id = "device_123"
     device.device_name = "Test Device"
@@ -56,8 +57,9 @@ async def test_coordinator_initialization(coordinator, mock_hass, mock_client) -
 async def test_async_config_entry_first_refresh_success(
     coordinator, mock_client, mock_device
 ) -> None:
-    """Test initial device discovery success."""
+    """Test successful initial device discovery."""
     mock_client.discover_devices.return_value = [mock_device]
+
     await coordinator.async_config_entry_first_refresh()
 
     mock_client.discover_devices.assert_called_once()
@@ -68,7 +70,7 @@ async def test_async_config_entry_first_refresh_success(
 async def test_async_config_entry_first_refresh_failure(
     coordinator, mock_client
 ) -> None:
-    """Test initial device discovery failure."""
+    """Test failed initial device discovery."""
     mock_client.discover_devices.side_effect = RuntimeError("API error")
 
     with pytest.raises(UpdateFailed) as exc_info:
@@ -96,7 +98,7 @@ async def test_async_refresh_device_success(
 async def test_async_refresh_device_failure(
     coordinator, mock_client, mock_device
 ) -> None:
-    """Test refreshing a specific device with failure."""
+    """Test refreshing a specific device when API call fails."""
     coordinator._devices = {mock_device.device_id: mock_device}
     coordinator._is_initialized = True
     mock_client.get_device.side_effect = RuntimeError("Refresh error")
@@ -104,15 +106,13 @@ async def test_async_refresh_device_failure(
     await coordinator.async_refresh_device(mock_device.device_id)
 
     mock_client.get_device.assert_called_once_with(mock_device.device_id, refresh=True)
-    assert (
-        coordinator._devices[mock_device.device_id] == mock_device
-    )  # Device unchanged
+    assert coordinator._devices[mock_device.device_id] == mock_device  # Unchanged
 
 
 async def test_async_update_data_not_initialized(
     coordinator, mock_client, mock_device
 ) -> None:
-    """Test async_update_data when not initialized."""
+    """Test _async_update_data when coordinator is not initialized."""
     mock_client.discover_devices.return_value = [mock_device]
 
     result = await coordinator._async_update_data()
@@ -123,7 +123,7 @@ async def test_async_update_data_not_initialized(
 
 
 async def test_async_update_data_no_devices(coordinator, mock_client) -> None:
-    """Test async_update_data with no devices."""
+    """Test _async_update_data when no devices are known."""
     coordinator._is_initialized = True
     coordinator._devices = {}
 
@@ -134,7 +134,7 @@ async def test_async_update_data_no_devices(coordinator, mock_client) -> None:
 
 
 async def test_async_update_data_success(coordinator, mock_client, mock_device) -> None:
-    """Test async_update_data with successful update."""
+    """Test successful device report update."""
     coordinator._is_initialized = True
     coordinator._devices = {mock_device.device_id: mock_device}
     updated_device = MagicMock(spec=Device)
@@ -151,7 +151,7 @@ async def test_async_update_data_success(coordinator, mock_client, mock_device) 
 
 
 async def test_async_update_data_failure(coordinator, mock_client, mock_device) -> None:
-    """Test async_update_data with API failure."""
+    """Test _async_update_data when API call fails."""
     coordinator._is_initialized = True
     coordinator._devices = {mock_device.device_id: mock_device}
     mock_client.get_devices_report.side_effect = RuntimeError("API error")
@@ -160,6 +160,4 @@ async def test_async_update_data_failure(coordinator, mock_client, mock_device) 
         await coordinator._async_update_data()
 
     assert "API error during devices update: API error" in str(exc_info.value)
-    assert (
-        coordinator._devices[mock_device.device_id] == mock_device
-    )  # Device unchanged
+    assert coordinator._devices[mock_device.device_id] == mock_device  # Unchanged

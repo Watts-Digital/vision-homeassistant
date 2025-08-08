@@ -10,7 +10,8 @@ from homeassistant.components.watts.const import DOMAIN
 from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
 
-from .const import CLIENT_ID, CLIENT_SECRET
+CLIENT_ID = "123"
+CLIENT_SECRET = "456"
 
 
 @pytest.fixture(autouse=True)

@@ -16,7 +16,7 @@
       "authorize_url_timeout": "[%key:common::config_flow::abort::oauth2_authorize_url_timeout%]",
       "no_url_available": "[%key:common::config_flow::abort::oauth2_no_url_available%]",
       "user_rejected_authorize": "[%key:common::config_flow::abort::oauth2_user_rejected_authorize%]",
-      "invalid_token": "[%key:common::config_flow::abort::oauth2_invalid_access_token%]"
+      "invalid_token": "The provided access token is invalid."
     },
     "create_entry": {
       "default": "[%key:common::config_flow::create_entry::authenticated%]"

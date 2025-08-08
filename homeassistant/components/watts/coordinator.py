@@ -88,8 +88,3 @@ class WattsVisionCoordinator(DataUpdateCoordinator):
     def device_ids(self) -> list[str]:
         """Get list of all device IDs."""
         return list(self._devices.keys())
-
-    @property
-    def is_initialized(self) -> bool:
-        """Check if coordinator has been initialized."""
-        return self._is_initialized

@@ -57,11 +57,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: WattsVisionConfigEntry) 
     except ClientError as err:
         raise ConfigEntryNotReady("Network issue during OAuth setup") from err
 
-    _LOGGER.debug(
-        "OAuth2 session valid, access_token expires at -> %s",
-        oauth_session.token.get("expires_at"),
-    )
-
     auth = WattsVisionAuth(
         client_id=implementation.client_id,
         client_secret=implementation.client_secret,
