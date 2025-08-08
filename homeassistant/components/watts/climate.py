@@ -6,8 +6,6 @@ import asyncio
 import logging
 from typing import Any
 
-from visionpluspython.visionpluspython import ThermostatDevice, ThermostatMode
-
 from homeassistant.components.climate import (
     ClimateEntity,
     ClimateEntityFeature,
@@ -16,6 +14,7 @@ from homeassistant.components.climate import (
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from visionpluspython.visionpluspython import ThermostatDevice, ThermostatMode
 
 from . import WattsVisionConfigEntry
 from .coordinator import WattsVisionCoordinator
@@ -92,6 +91,7 @@ class WattsVisionClimate(WattsVisionEntity, ClimateEntity):
         """Return hvac mode."""
         device = self.coordinator.data.get(self._device_id)
         if isinstance(device, ThermostatDevice):
+            # Map from string mode names to HVAC modes
             mode_mapping = {
                 "Program": HVACMode.AUTO,
                 "Eco": HVACMode.HEAT,
@@ -140,22 +140,25 @@ class WattsVisionClimate(WattsVisionEntity, ClimateEntity):
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set new target hvac mode."""
+
         hvac_to_mode = {
-            HVACMode.HEAT: "Comfort",
-            HVACMode.OFF: "Off",
-            HVACMode.AUTO: "Program",
+            HVACMode.HEAT: ThermostatMode.COMFORT,
+            HVACMode.OFF: ThermostatMode.OFF,
+            HVACMode.AUTO: ThermostatMode.PROGRAM,
         }
 
-        mode_str = hvac_to_mode.get(hvac_mode)
-        if mode_str is None:
+        mode = hvac_to_mode.get(hvac_mode)
+        if mode is None:
             _LOGGER.error("Unsupported HVAC mode %s for %s", hvac_mode, self._attr_name)
             return
 
         try:
-            mode = ThermostatMode(mode_str)
             await self.coordinator.client.set_thermostat_mode(self._device_id, mode)
             _LOGGER.debug(
-                "Successfully set HVAC mode to %s for %s", hvac_mode, self._attr_name
+                "Successfully set HVAC mode to %s (ThermostatMode.%s) for %s",
+                hvac_mode,
+                mode.name,
+                self._attr_name,
             )
 
             await asyncio.sleep(7)
