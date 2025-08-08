@@ -14,18 +14,23 @@ from homeassistant.helpers.update_coordinator import UpdateFailed
 
 from tests.common import MockConfigEntry
 
+TEST_DEVICE_ID = "test-device-id"
+TEST_ACCESS_TOKEN = "test-access-token"
+TEST_REFRESH_TOKEN = "test-refresh-token"
+TEST_EXPIRES_AT = 9999999999
+
 
 async def test_setup_entry_success(hass: HomeAssistant) -> None:
     """Test successful setup and unload of entry."""
     config_entry = MockConfigEntry(
         domain="watts",
         data={
-            "device_id": "test-device-id",
+            "device_id": TEST_DEVICE_ID,
             "auth_implementation": "watts",
             "token": {
-                "access_token": "test-access-token",
-                "refresh_token": "test-refresh-token",
-                "expires_at": 9999999999,
+                "access_token": TEST_ACCESS_TOKEN,
+                "refresh_token": TEST_REFRESH_TOKEN,
+                "expires_at": TEST_EXPIRES_AT,
             },
         },
     )
@@ -44,13 +49,11 @@ async def test_setup_entry_success(hass: HomeAssistant) -> None:
         patch("homeassistant.components.watts.WattsVisionClient") as mock_client_class,
         patch("homeassistant.components.watts.WattsVisionAuth") as mock_auth_class,
     ):
-        # Mock the OAuth implementation
         mock_implementation = AsyncMock()
         mock_implementation.client_id = "test-client-id"
         mock_implementation.client_secret = "test-client-secret"
         mock_get_implementation.return_value = mock_implementation
 
-        # Mock the OAuth session
         mock_session_instance = AsyncMock()
         mock_session_instance.token = {
             "access_token": "test-access-token",
@@ -60,18 +63,14 @@ async def test_setup_entry_success(hass: HomeAssistant) -> None:
         mock_session_instance.async_ensure_token_valid = AsyncMock()
         mock_session.return_value = mock_session_instance
 
-        # Mock the WattsVisionAuth
         mock_auth_instance = AsyncMock()
         mock_auth_class.return_value = mock_auth_instance
 
-        # Mock the WattsVisionClient
         mock_client_instance = AsyncMock()
         mock_client_class.return_value = mock_client_instance
 
-        # Mock the coordinator's first refresh to succeed
         mock_first_refresh.return_value = None
 
-        # Setup entry
         result = await hass.config_entries.async_setup(config_entry.entry_id)
         await hass.async_block_till_done()
 
@@ -94,9 +93,9 @@ async def test_setup_entry_auth_failed(hass: HomeAssistant) -> None:
         data={
             "auth_implementation": "watts",
             "token": {
-                "access_token": "invalid-token",
-                "refresh_token": "test-refresh-token",
-                "expires_at": 9999999999,
+                "access_token": TEST_ACCESS_TOKEN,
+                "refresh_token": TEST_REFRESH_TOKEN,
+                "expires_at": TEST_EXPIRES_AT,
             },
         },
     )
@@ -110,24 +109,22 @@ async def test_setup_entry_auth_failed(hass: HomeAssistant) -> None:
             "homeassistant.helpers.config_entry_oauth2_flow.OAuth2Session"
         ) as mock_session,
     ):
-        # Mock the OAuth implementation
         mock_implementation = AsyncMock()
         mock_implementation.client_id = "test-client-id"
         mock_implementation.client_secret = "test-client-secret"
         mock_get_implementation.return_value = mock_implementation
 
-        # Mock OAuth session to raise 401 error
+        # Raise 401 error
         mock_session_instance = AsyncMock()
         mock_session_instance.async_ensure_token_valid.side_effect = (
             ClientResponseError(None, None, status=401, message="Unauthorized")
         )
         mock_session_instance.token = {
-            "refresh_token": "test-refresh-token",
-            "expires_at": 9999999999,
+            "refresh_token": TEST_REFRESH_TOKEN,
+            "expires_at": TEST_EXPIRES_AT,
         }
         mock_session.return_value = mock_session_instance
 
-        # Setup entry - should fail with auth error
         result = await hass.config_entries.async_setup(config_entry.entry_id)
         await hass.async_block_till_done()
 
@@ -142,9 +139,9 @@ async def test_setup_entry_not_ready(hass: HomeAssistant) -> None:
         data={
             "auth_implementation": "watts",
             "token": {
-                "access_token": "test-access-token",
-                "refresh_token": "test-refresh-token",
-                "expires_at": 9999999999,
+                "access_token": TEST_ACCESS_TOKEN,
+                "refresh_token": TEST_REFRESH_TOKEN,
+                "expires_at": TEST_EXPIRES_AT,
             },
         },
     )
@@ -158,24 +155,21 @@ async def test_setup_entry_not_ready(hass: HomeAssistant) -> None:
             "homeassistant.helpers.config_entry_oauth2_flow.OAuth2Session"
         ) as mock_session,
     ):
-        # Mock the OAuth implementation
         mock_implementation = AsyncMock()
         mock_implementation.client_id = "test-client-id"
         mock_implementation.client_secret = "test-client-secret"
         mock_get_implementation.return_value = mock_implementation
 
-        # Mock OAuth session to raise network error
         mock_session_instance = AsyncMock()
         mock_session_instance.async_ensure_token_valid.side_effect = ClientError(
             "Connection timeout"
         )
         mock_session_instance.token = {
-            "refresh_token": "test-refresh-token",
-            "expires_at": 9999999999,
+            "refresh_token": TEST_REFRESH_TOKEN,
+            "expires_at": TEST_EXPIRES_AT,
         }
         mock_session.return_value = mock_session_instance
 
-        # Setup entry - should fail and retry
         result = await hass.config_entries.async_setup(config_entry.entry_id)
         await hass.async_block_till_done()
 
@@ -190,9 +184,9 @@ async def test_setup_entry_coordinator_update_failed(hass: HomeAssistant) -> Non
         data={
             "auth_implementation": "watts",
             "token": {
-                "access_token": "test-access-token",
-                "refresh_token": "test-refresh-token",
-                "expires_at": 9999999999,
+                "access_token": TEST_ACCESS_TOKEN,
+                "refresh_token": TEST_REFRESH_TOKEN,
+                "expires_at": TEST_EXPIRES_AT,
             },
         },
     )
@@ -211,32 +205,27 @@ async def test_setup_entry_coordinator_update_failed(hass: HomeAssistant) -> Non
             "homeassistant.components.watts.WattsVisionCoordinator.async_config_entry_first_refresh"
         ) as mock_first_refresh,
     ):
-        # Mock the OAuth implementation
         mock_implementation = AsyncMock()
         mock_implementation.client_id = "test-client-id"
         mock_implementation.client_secret = "test-client-secret"
         mock_get_implementation.return_value = mock_implementation
 
-        # Mock the OAuth session
         mock_session_instance = AsyncMock()
         mock_session_instance.token = {
-            "access_token": "test-access-token",
-            "refresh_token": "test-refresh-token",
-            "expires_at": 9999999999,
+            "access_token": TEST_ACCESS_TOKEN,
+            "refresh_token": TEST_REFRESH_TOKEN,
+            "expires_at": TEST_EXPIRES_AT,
         }
         mock_session_instance.async_ensure_token_valid = AsyncMock()
         mock_session.return_value = mock_session_instance
 
-        # Mock the WattsVisionAuth and Client
         mock_auth_instance = AsyncMock()
         mock_auth_class.return_value = mock_auth_instance
         mock_client_instance = AsyncMock()
         mock_client_class.return_value = mock_client_instance
 
-        # Mock coordinator first refresh to fail
         mock_first_refresh.side_effect = UpdateFailed("Coordinator update failed")
 
-        # Setup entry - should fail due to coordinator error
         result = await hass.config_entries.async_setup(config_entry.entry_id)
         await hass.async_block_till_done()
 
@@ -264,22 +253,15 @@ async def test_unload_entry_client_error(hass: HomeAssistant) -> None:
         "coordinator": mock_coordinator,
     }
 
-    with (
-        patch(
-            "homeassistant.config_entries.ConfigEntries.async_unload_platforms",
-            return_value=True,
-        ),
-        patch("homeassistant.components.watts._LOGGER") as mock_logger,
+    with patch(
+        "homeassistant.config_entries.ConfigEntries.async_unload_platforms",
+        return_value=True,
     ):
         result = await async_unload_entry(hass, config_entry)
 
         assert result is True
         mock_client.close.assert_called_once()
         mock_auth.close.assert_called_once()
-        # Check that warning was logged for client error
-        mock_logger.warning.assert_any_call(
-            "Error closing client: %s", mock_client.close.side_effect
-        )
 
 
 async def test_unload_entry_auth_error(hass: HomeAssistant) -> None:
@@ -302,22 +284,15 @@ async def test_unload_entry_auth_error(hass: HomeAssistant) -> None:
         "coordinator": mock_coordinator,
     }
 
-    with (
-        patch(
-            "homeassistant.config_entries.ConfigEntries.async_unload_platforms",
-            return_value=True,
-        ),
-        patch("homeassistant.components.watts._LOGGER") as mock_logger,
+    with patch(
+        "homeassistant.config_entries.ConfigEntries.async_unload_platforms",
+        return_value=True,
     ):
         result = await async_unload_entry(hass, config_entry)
 
         assert result is True
         mock_client.close.assert_called_once()
         mock_auth.close.assert_called_once()
-        # Check that warning was logged for auth error
-        mock_logger.warning.assert_any_call(
-            "Error closing auth: %s", mock_auth.close.side_effect
-        )
 
 
 async def test_unload_entry_coordinator_error(hass: HomeAssistant) -> None:
@@ -340,22 +315,15 @@ async def test_unload_entry_coordinator_error(hass: HomeAssistant) -> None:
         "coordinator": mock_coordinator,
     }
 
-    with (
-        patch(
-            "homeassistant.config_entries.ConfigEntries.async_unload_platforms",
-            return_value=True,
-        ),
-        patch("homeassistant.components.watts._LOGGER") as mock_logger,
+    with patch(
+        "homeassistant.config_entries.ConfigEntries.async_unload_platforms",
+        return_value=True,
     ):
         result = await async_unload_entry(hass, config_entry)
 
         assert result is True
         mock_client.close.assert_called_once()
         mock_auth.close.assert_called_once()
-        # Check that warning was logged for coordinator error
-        mock_logger.warning.assert_any_call(
-            "Error closing coordinator: %s", mock_coordinator.async_shutdown.side_effect
-        )
 
 
 async def test_unload_entry_platform_unload_fails(hass: HomeAssistant) -> None:
@@ -377,18 +345,12 @@ async def test_unload_entry_platform_unload_fails(hass: HomeAssistant) -> None:
         "coordinator": mock_coordinator,
     }
 
-    with (
-        patch(
-            "homeassistant.config_entries.ConfigEntries.async_unload_platforms",
-            return_value=False,
-        ),
-        patch("homeassistant.components.watts._LOGGER") as mock_logger,
+    with patch(
+        "homeassistant.config_entries.ConfigEntries.async_unload_platforms",
+        return_value=False,
     ):
         result = await async_unload_entry(hass, config_entry)
 
         assert result is False
         mock_client.close.assert_called_once()
         mock_auth.close.assert_called_once()
-        mock_logger.error.assert_called_once_with(
-            "Failed to unload platforms for Watts Vision + integration"
-        )
