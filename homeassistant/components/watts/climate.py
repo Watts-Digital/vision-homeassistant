@@ -14,7 +14,7 @@ from homeassistant.components.climate import (
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from visionpluspython.visionpluspython import ThermostatDevice
+from visionpluspython.visionpluspython import ThermostatDevice, ThermostatMode
 
 from . import WattsVisionConfigEntry
 from .coordinator import WattsVisionCoordinator
@@ -89,6 +89,9 @@ class WattsVisionClimate(WattsVisionEntity, ClimateEntity):
     @property
     def hvac_mode(self) -> HVACMode | None:
         """Return hvac mode."""
+        if self._device_id is None:
+            return None
+
         device = self.coordinator.data.get(self._device_id)
         if isinstance(device, ThermostatDevice):
             mode_mapping = {
@@ -103,6 +106,9 @@ class WattsVisionClimate(WattsVisionEntity, ClimateEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return additional state attributes."""
+        if self._device_id is None:
+            return {}
+
         device = self.coordinator.data.get(self._device_id)
         if not isinstance(device, ThermostatDevice):
             return {}
@@ -118,7 +124,7 @@ class WattsVisionClimate(WattsVisionEntity, ClimateEntity):
     async def async_set_temperature(self, **kwargs: Any) -> None:
         """Set new target temperature."""
         temperature = kwargs.get(ATTR_TEMPERATURE)
-        if temperature is None:
+        if temperature is None or self._device_id is None:
             return
 
         try:
@@ -139,18 +145,22 @@ class WattsVisionClimate(WattsVisionEntity, ClimateEntity):
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set new target hvac mode."""
+        if self._device_id is None:
+            return
+
         hvac_to_mode = {
             HVACMode.HEAT: "Comfort",
             HVACMode.OFF: "Off",
             HVACMode.AUTO: "Program",
         }
 
-        mode = hvac_to_mode.get(hvac_mode)
-        if mode is None:
+        mode_str = hvac_to_mode.get(hvac_mode)
+        if mode_str is None:
             _LOGGER.error("Unsupported HVAC mode %s for %s", hvac_mode, self._attr_name)
             return
 
         try:
+            mode = ThermostatMode(mode_str)
             await self.coordinator.client.set_thermostat_mode(self._device_id, mode)
             _LOGGER.debug(
                 "Successfully set HVAC mode to %s for %s", hvac_mode, self._attr_name
@@ -159,5 +169,5 @@ class WattsVisionClimate(WattsVisionEntity, ClimateEntity):
             await asyncio.sleep(7)
             await self.coordinator.async_refresh_device(self._device_id)
 
-        except RuntimeError as err:
+        except (ValueError, RuntimeError) as err:
             _LOGGER.error("Error setting HVAC mode for %s: %s", self._attr_name, err)
